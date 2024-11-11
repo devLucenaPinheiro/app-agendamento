@@ -1,13 +1,65 @@
-import React, { useState } from 'react'
-import { View, Text, TextInput, Button, Linking } from 'react-native'
-import { Calendar } from 'react-native-calendars'
+import React, { useState } from 'react';
+import { View, Text, TextInput, Button, Alert } from 'react-native';
+import { Calendar } from 'react-native-calendars';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const registerUser = async (username, password) => {
+  try {
+    const userData = JSON.stringify({ username, password })
+    await AsyncStorage.setItem(`user-${username}`, userData)
+    console.log('Usuário registrado com sucesso!')
+    return true;
+  } catch (error) {
+    console.log('Erro ao registrar usuário:', error)
+    return false;
+  }
+}
+
+const loginUser = async (username, password) => {
+  try {
+    const userData = await AsyncStorage.getItem(`user-${username}`)
+    if (!userData) {
+      console.log('Usuário não encontrado')
+      return false
+    }
+
+    const user = JSON.parse(userData)
+    console.log('Usuário encontrado:', user)
+    return user.password === password
+  } catch (error) {
+    console.log('Erro ao fazer login:', error)
+    return false
+  }
+}
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
   const [selectedDate, setSelectedDate] = useState('')
   const [events, setEvents] = useState({})
   const [newEvent, setNewEvent] = useState('')
 
-  const handleDatePress = (day) => {
+  const handleLogin = async () => {
+    const success = await loginUser(username, password)
+    if (success) {
+      setIsAuthenticated(true)
+      Alert.alert('Sucesso', 'Login realizado com sucesso!')
+    } else {
+      Alert.alert('Erro', 'Usuário ou senha incorretos.')
+    }
+  }
+
+  const handleRegister = async () => {
+    const success = await registerUser(username, password)
+    if (success) {
+      Alert.alert('Sucesso', 'Usuário cadastrado com sucesso!')
+    } else {
+      Alert.alert('Erro', 'Erro ao cadastrar usuário.')
+    }
+  }
+
+  const handleDatePress = day => {
     setSelectedDate(day.dateString)
   }
 
@@ -15,37 +67,46 @@ export default function App() {
     if (newEvent) {
       setEvents({
         ...events,
-        [selectedDate]: [...(events[selectedDate] || []), newEvent]
+        [selectedDate]: [...(events[selectedDate] || []), newEvent],
       })
       setNewEvent('')
     }
   }
 
-  const sendMessageOnWhatsApp = () => {
-    const message = `Olá, gostaria de agendar um evento para a data ${selectedDate}.`
-    const url = `whatsapp://send?text=${encodeURIComponent(message)}`
-
-    Linking.openURL(url).catch(() =>
-      alert("Por favor, instale o WhatsApp para usar essa funcionalidade.")
+  if (!isAuthenticated) {
+    return (
+      <View style={{ padding: 20 }}>
+        <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 20 }}>
+          Login
+        </Text>
+        <TextInput
+          placeholder="Usuário"
+          value={username}
+          onChangeText={setUsername}
+          style={{ borderBottomWidth: 1, marginBottom: 10 }}
+        />
+        <TextInput
+          placeholder="Senha"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          style={{ borderBottomWidth: 1, marginBottom: 20 }}
+        />
+        <Button title="Entrar" onPress={handleLogin} />
+        <Button title="Cadastrar" onPress={handleRegister} />
+      </View>
     )
   }
 
   return (
     <View style={{ padding: 20 }}>
       <Calendar onDayPress={handleDatePress} />
-
-      <Button
-        title="mande mensagem no WhatsApp para agendar!"
-        onPress={sendMessageOnWhatsApp}
-      />
-
       {selectedDate ? (
         <View style={{ marginTop: 20 }}>
           <Text>Eventos em {selectedDate}:</Text>
           {events[selectedDate]?.map((event, index) => (
             <Text key={index}>• {event}</Text>
           ))}
-
           <TextInput
             placeholder="Adicionar evento"
             value={newEvent}
