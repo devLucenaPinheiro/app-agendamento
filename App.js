@@ -1,77 +1,81 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, Alert } from 'react-native';
+import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const registerUser = async (username, password) => {
   try {
-    const userData = JSON.stringify({ username, password })
-    await AsyncStorage.setItem(`user-${username}`, userData)
-    console.log('Usuário registrado com sucesso!')
+    const userData = JSON.stringify({ username, password });
+    await AsyncStorage.setItem(`user-${username}`, userData);
+    console.log('Usuário registrado com sucesso!');
     return true;
   } catch (error) {
-    console.log('Erro ao registrar usuário:', error)
+    console.log('Erro ao registrar usuário:', error);
     return false;
   }
-}
+};
 
 const loginUser = async (username, password) => {
   try {
-    const userData = await AsyncStorage.getItem(`user-${username}`)
+    const userData = await AsyncStorage.getItem(`user-${username}`);
     if (!userData) {
-      console.log('Usuário não encontrado')
-      return false
+      console.log('Usuário não encontrado');
+      return false;
     }
 
-    const user = JSON.parse(userData)
-    console.log('Usuário encontrado:', user)
-    return user.password === password
+    const user = JSON.parse(userData);
+    console.log('Usuário encontrado:', user);
+    return user.password === password;
   } catch (error) {
-    console.log('Erro ao fazer login:', error)
-    return false
+    console.log('Erro ao fazer login:', error);
+    return false;
   }
-}
+};
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [selectedDate, setSelectedDate] = useState('')
-  const [events, setEvents] = useState({})
-  const [newEvent, setNewEvent] = useState('')
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [events, setEvents] = useState({});
+  const [newEvent, setNewEvent] = useState('');
 
   const handleLogin = async () => {
-    const success = await loginUser(username, password)
+    const success = await loginUser(username, password);
     if (success) {
-      setIsAuthenticated(true)
-      Alert.alert('Sucesso', 'Login realizado com sucesso!')
+      setIsAuthenticated(true);
+      Alert.alert('Sucesso', 'Login realizado com sucesso!');
     } else {
-      Alert.alert('Erro', 'Usuário ou senha incorretos.')
+      Alert.alert('Erro', 'Usuário ou senha incorretos.');
     }
-  }
+  };
 
   const handleRegister = async () => {
-    const success = await registerUser(username, password)
+    const success = await registerUser(username, password);
     if (success) {
-      Alert.alert('Sucesso', 'Usuário cadastrado com sucesso!')
+      Alert.alert('Sucesso', 'Usuário cadastrado com sucesso!');
     } else {
-      Alert.alert('Erro', 'Erro ao cadastrar usuário.')
+      Alert.alert('Erro', 'Erro ao cadastrar usuário.');
     }
-  }
+  };
 
   const handleDatePress = day => {
-    setSelectedDate(day.dateString)
-  }
+    setSelectedDate(day.dateString);
+  };
 
   const addEvent = () => {
     if (newEvent) {
       setEvents({
         ...events,
         [selectedDate]: [...(events[selectedDate] || []), newEvent],
-      })
-      setNewEvent('')
+      });
+      setNewEvent('');
     }
-  }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+  };
 
   if (!isAuthenticated) {
     return (
@@ -95,11 +99,11 @@ export default function App() {
         <Button title="Entrar" onPress={handleLogin} />
         <Button title="Cadastrar" onPress={handleRegister} />
       </View>
-    )
+    );
   }
 
   return (
-    <View style={{ padding: 20 }}>
+    <View style={{ flex: 1, padding: 20 }}>
       <Calendar onDayPress={handleDatePress} />
       {selectedDate ? (
         <View style={{ marginTop: 20 }}>
@@ -118,6 +122,19 @@ export default function App() {
       ) : (
         <Text>Selecione uma data para agendar um evento.</Text>
       )}
+
+      {/* Botão de Logout no canto inferior esquerdo */}
+      <View style={styles.logoutButtonContainer}>
+        <Button title="Logout" onPress={handleLogout} />
+      </View>
     </View>
-  )
+  );
 }
+
+const styles = StyleSheet.create({
+  logoutButtonContainer: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+  },
+});
