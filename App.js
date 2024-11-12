@@ -1,17 +1,39 @@
 import React, { useState } from 'react'
 import { NavigationContainer } from '@react-navigation/native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
-import { View, Text, TextInput, Alert, StyleSheet, TouchableOpacity, ScrollView } from 'react-native'
+import { View, Text, TextInput, Alert, StyleSheet, TouchableOpacity, ScrollView} from 'react-native'
 import { Calendar } from 'react-native-calendars'
+import { Picker } from '@react-native-picker/picker'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { registerUser, loginUser } from './database'
 
 const Tab = createBottomTabNavigator()
 
+const availableTimes = [
+  '12:00', '12:15', '12:30', '12:45', '13:00', '13:15', '13:30', '13:45', '14:00', '14:15', '14:30', '14:45',
+  '15:00', '15:15', '15:30', '15:45', '16:00', '16:15', '16:30', '16:45', '17:00', '17:15', '17:30', '17:45',
+  '18:00', '18:15', '18:30', '18:45', '19:00', '19:15', '19:30', '19:45', '20:00'
+]
+
+const services = ['Corte de cabelo', 'Luzes no cabelo', 'Sobrancelha simples']
+
 function CalendarScreen({ events, selectedDate, setSelectedDate, newEvent, setNewEvent, addEvent, removeEvent }) {
+  const [selectedTime, setSelectedTime] = useState('')
+  const [selectedService, setSelectedService] = useState('')
+
   const handleDatePress = (day) => {
     setSelectedDate(day.dateString)
   }
+
+ const handleAddEvent = () => {
+  if (selectedTime && selectedService) {
+    addEvent(selectedDate, `${selectedService} às ${selectedTime}`)
+    setSelectedTime('')
+    setSelectedService('')
+  } else {
+    Alert.alert('Erro', 'Selecione um horário e um serviço.')
+  }
+}
 
   return (
     <View style={styles.container}>
@@ -27,13 +49,30 @@ function CalendarScreen({ events, selectedDate, setSelectedDate, newEvent, setNe
               </TouchableOpacity>
             </View>
           ))}
-          <TextInput
-            placeholder="Adicionar evento"
-            value={newEvent}
-            onChangeText={setNewEvent}
-            style={styles.input}
-          />
-          <TouchableOpacity style={styles.button} onPress={addEvent}>
+          <Text style={styles.label}>Selecione o horário:</Text>
+          <Picker
+            selectedValue={selectedTime}
+            onValueChange={(itemValue) => setSelectedTime(itemValue)}
+            style={styles.picker}
+          >
+            <Picker.Item label="Escolha o horário" value="" />
+            {availableTimes.map((time) => (
+              <Picker.Item key={time} label={time} value={time} />
+            ))}
+          </Picker>
+          <Text style={styles.label}>Selecione o serviço:</Text>
+          <Picker
+            selectedValue={selectedService}
+            onValueChange={(itemValue) => setSelectedService(itemValue)}
+            style={styles.picker}
+          >
+            <Picker.Item label="Escolha o serviço" value="" />
+            {services.map((service) => (
+              <Picker.Item key={service} label={service} value={service} />
+            ))}
+          </Picker>
+
+          <TouchableOpacity style={styles.button} onPress={handleAddEvent}>
             <Text style={styles.buttonText}>Salvar Evento</Text>
           </TouchableOpacity>
         </View>
@@ -78,7 +117,6 @@ export default function App() {
   const [password, setPassword] = useState('')
   const [selectedDate, setSelectedDate] = useState('')
   const [events, setEvents] = useState({})
-  const [newEvent, setNewEvent] = useState('')
 
   const handleLogin = async () => {
     const success = await loginUser(username, password)
@@ -104,14 +142,11 @@ export default function App() {
     }
   }
 
-  const addEvent = () => {
-    if (newEvent) {
-      setEvents({
-        ...events,
-        [selectedDate]: [...(events[selectedDate] || []), newEvent],
-      })
-      setNewEvent('')
-    }
+   const addEvent = (date, event) => {
+    setEvents({
+      ...events,
+      [date]: [...(events[date] || []), event],
+    })
   }
 
   const removeEvent = (index) => {
@@ -165,19 +200,19 @@ export default function App() {
     <NavigationContainer>
       <Tab.Navigator>
         <Tab.Screen name="Calendário">
-          {() => (
-            <CalendarScreen
-              events={events}
-              selectedDate={selectedDate}
-              setSelectedDate={setSelectedDate}
-              newEvent={newEvent}
-              setNewEvent={setNewEvent}
-              addEvent={addEvent}
-              removeEvent={removeEvent}
-              handleLogout={handleLogout}
-            />
-          )}
-        </Tab.Screen>
+  {() => (
+    <CalendarScreen
+      events={events}
+      selectedDate={selectedDate}
+      setSelectedDate={setSelectedDate}
+
+      addEvent={addEvent}
+      removeEvent={removeEvent}
+      handleLogout={handleLogout}
+    />
+  )}
+</Tab.Screen>
+
         <Tab.Screen name="Horários Agendados">
           {() => <ScheduledEventsScreen events={events} handleLogout={handleLogout} />}
         </Tab.Screen>
