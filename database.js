@@ -1,8 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
-export const registerUser = async (username, password) => {
+export const registerUser = async (username, password, name) => {
   try {
-    const userData = JSON.stringify({ username, password })
+    const userData = JSON.stringify({ username, password, name })
     await AsyncStorage.setItem(`user-${username}`, userData)
     return true
   } catch (error) {
