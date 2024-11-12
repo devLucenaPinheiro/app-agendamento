@@ -1,140 +1,131 @@
-import React, { useState } from 'react'
-import { View, Text, TextInput, Button, Alert, StyleSheet, TouchableOpacity } from 'react-native'
-import { Calendar } from 'react-native-calendars'
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import { registerUser, loginUser } from './database'
+import React, { useState } from 'react';
+import { View, Text, TextInput, Alert, StyleSheet, TouchableOpacity } from 'react-native';
+import { Calendar } from 'react-native-calendars';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { registerUser, loginUser } from './database';
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [isRegistering, setIsRegistering] = useState(false)
-  const [name, setName] = useState('')
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [selectedDate, setSelectedDate] = useState('')
-  const [events, setEvents] = useState({})
-  const [newEvent, setNewEvent] = useState('')
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [events, setEvents] = useState({});
+  const [newEvent, setNewEvent] = useState('');
 
   const handleLogin = async () => {
-    const success = await loginUser(username, password)
+    const success = await loginUser(username, password);
     if (success) {
-      setIsAuthenticated(true)
-      Alert.alert('Sucesso', 'Login realizado com sucesso!')
+      setIsAuthenticated(true);
+      Alert.alert('Sucesso', 'Login realizado com sucesso!');
     } else {
-      Alert.alert('Erro', 'Usuário ou senha incorretos.')
+      Alert.alert('Erro', 'Usuário ou senha incorretos.');
     }
-  }
+  };
 
   const handleRegister = async () => {
     if (name && username && password) {
-      const success = await registerUser(username, password, name)
+      const success = await registerUser(username, password, name);
       if (success) {
-        Alert.alert('Sucesso', 'Usuário cadastrado com sucesso!')
-        setIsRegistering(false)
+        Alert.alert('Sucesso', 'Usuário cadastrado com sucesso!');
+        setIsRegistering(false);
       } else {
-        Alert.alert('Erro', 'Erro ao cadastrar usuário.')
+        Alert.alert('Erro', 'Erro ao cadastrar usuário.');
       }
     } else {
-      Alert.alert('Erro', 'Preencha todos os campos.')
+      Alert.alert('Erro', 'Preencha todos os campos.');
     }
-  }
+  };
 
   const handleDatePress = (day) => {
-    setSelectedDate(day.dateString)
-  }
+    setSelectedDate(day.dateString);
+  };
 
   const addEvent = () => {
     if (newEvent) {
       setEvents({
         ...events,
         [selectedDate]: [...(events[selectedDate] || []), newEvent],
-      })
-      setNewEvent('')
+      });
+      setNewEvent('');
     }
-  }
+  };
 
   const removeEvent = (index) => {
-    const updatedEvents = events[selectedDate].filter((_, i) => i !== index)
+    const updatedEvents = events[selectedDate].filter((_, i) => i !== index);
     setEvents({
       ...events,
       [selectedDate]: updatedEvents,
-    })
-  }
+    });
+  };
 
   const handleLogout = () => {
-    setIsAuthenticated(false)
-  }
+    setIsAuthenticated(false);
+  };
 
   if (!isAuthenticated) {
-    if (isRegistering) {
-      return (
-        <View style={{ padding: 20 }}>
-          <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 20 }}>
-            Cadastro
-          </Text>
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>{isRegistering ? 'Cadastro' : 'Login'}</Text>
+        {isRegistering && (
           <TextInput
             placeholder="Nome"
             value={name}
             onChangeText={setName}
-            style={{ borderBottomWidth: 1, marginBottom: 10 }}
+            style={styles.input}
           />
-          <TextInput
-            placeholder="Nome de Usuário"
-            value={username}
-            onChangeText={setUsername}
-            style={{ borderBottomWidth: 1, marginBottom: 10 }}
-          />
-          <TextInput
-            placeholder="Senha"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            style={{ borderBottomWidth: 1, marginBottom: 20 }}
-          />
-          <Button title="Cadastrar" onPress={handleRegister} />
-          <TouchableOpacity onPress={() => setIsRegistering(false)}>
-            <Text style={{ color: 'blue', marginTop: 10 }}>Já tem uma conta? Login</Text>
-          </TouchableOpacity>
-        </View>
-      )
-    }
-
-    return (
-      <View style={{ padding: 20 }}>
-        <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 20 }}>
-          Login
-        </Text>
+        )}
         <TextInput
           placeholder="Nome de Usuário"
           value={username}
           onChangeText={setUsername}
-          style={{ borderBottomWidth: 1, marginBottom: 10 }}
+          style={styles.input}
         />
         <TextInput
           placeholder="Senha"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
-          style={{ borderBottomWidth: 1, marginBottom: 20 }}
+          style={styles.input}
         />
-        <Button title="Entrar" onPress={handleLogin} />
-        <TouchableOpacity onPress={() => setIsRegistering(true)}>
-          <Text style={{ color: 'blue', marginTop: 10 }}>Não tem uma conta? Cadastre-se</Text>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={isRegistering ? handleRegister : handleLogin}
+        >
+          <Text style={styles.buttonText}>
+            {isRegistering ? 'Cadastrar' : 'Entrar'}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setIsRegistering(!isRegistering)}
+        >
+          <Text style={styles.linkText}>
+            {isRegistering ? 'Já tem uma conta? Login' : 'Não tem uma conta? Cadastre-se'}
+          </Text>
         </TouchableOpacity>
       </View>
-    )
+    );
   }
 
   return (
-    <View style={{ flex: 1, padding: 20 }}>
-      <Calendar onDayPress={handleDatePress} />
+    <View style={styles.container}>
+      <Calendar
+        onDayPress={handleDatePress}
+        theme={{
+          selectedDayBackgroundColor: '#6b52ae',
+          todayTextColor: '#6b52ae',
+          arrowColor: '#6b52ae',
+        }}
+      />
       {selectedDate ? (
-        <View style={{ marginTop: 20 }}>
-          <Text>Eventos em {selectedDate}:</Text>
+        <View style={styles.eventContainer}>
+          <Text style={styles.eventDate}>Eventos em {selectedDate}:</Text>
           {events[selectedDate]?.map((event, index) => (
             <View key={index} style={styles.eventItem}>
-              <Text>• {event}</Text>
+              <Text style={styles.eventText}>• {event}</Text>
               <TouchableOpacity onPress={() => removeEvent(index)} style={styles.removeButton}>
-                <Text style={{ color: 'red' }}>Desmarcar</Text>
+                <Text style={styles.removeButtonText}>Desmarcar</Text>
               </TouchableOpacity>
             </View>
           ))}
@@ -142,26 +133,69 @@ export default function App() {
             placeholder="Adicionar evento"
             value={newEvent}
             onChangeText={setNewEvent}
-            style={{ borderBottomWidth: 1, marginVertical: 10 }}
+            style={styles.input}
           />
-          <Button title="Salvar Evento" onPress={addEvent} />
+          <TouchableOpacity style={styles.button} onPress={addEvent}>
+            <Text style={styles.buttonText}>Salvar Evento</Text>
+          </TouchableOpacity>
         </View>
       ) : (
-        <Text>Selecione uma data para agendar um evento.</Text>
+        <Text style={styles.infoText}>Selecione uma data para agendar um evento.</Text>
       )}
-
-      <View style={styles.logoutButtonContainer}>
-        <Button title="Logout" onPress={handleLogout} />
-      </View>
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <Text style={styles.logoutButtonText}>Logout</Text>
+      </TouchableOpacity>
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
-  logoutButtonContainer: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
+  container: {
+    flex: 1,
+    backgroundColor: '#f3f4f6',
+    padding: 20,
+    justifyContent: 'center',
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#6b52ae',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  input: {
+    height: 40,
+    borderColor: '#ccc',
+    borderBottomWidth: 1,
+    marginBottom: 15,
+    paddingLeft: 10,
+  },
+  button: {
+    backgroundColor: '#6b52ae',
+    borderRadius: 5,
+    paddingVertical: 10,
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  linkText: {
+    color: '#6b52ae',
+    textAlign: 'center',
+    marginTop: 10,
+    textDecorationLine: 'underline',
+  },
+  eventContainer: {
+    marginTop: 20,
+  },
+  eventDate: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 10,
   },
   eventItem: {
     flexDirection: 'row',
@@ -169,7 +203,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 5,
   },
+  eventText: {
+    fontSize: 16,
+    color: '#333',
+  },
   removeButton: {
     paddingHorizontal: 10,
   },
-})
+  removeButtonText: {
+    color: 'red',
+    fontSize: 14,
+  },
+  infoText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 20,
+  },
+  logoutButton: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    padding: 10,
+    backgroundColor: '#6b52ae',
+    borderRadius: 5,
+  },
+  logoutButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});
