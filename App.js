@@ -54,7 +54,13 @@ const availableTimes = [
   '20:00',
 ]
 
-const services = ['Corte de cabelo', 'Luzes no cabelo', 'Sobrancelha simples']
+const serviceDurations = {
+  'Corte de cabelo': 30,
+  'Luzes no cabelo': 90,
+  'Sobrancelha simples': 15,
+}
+
+const services = Object.keys(serviceDurations)
 
 function CalendarScreen({
   events,
@@ -65,13 +71,51 @@ function CalendarScreen({
 }) {
   const [selectedTime, setSelectedTime] = useState('')
   const [selectedServices, setSelectedServices] = useState([])
+  const [unavailableTimesByDate, setUnavailableTimesByDate] = useState({})
 
   const handleDatePress = (day) => {
     setSelectedDate(day.dateString)
   }
 
+  const calculateTotalDuration = () => {
+    return selectedServices.reduce((total, service) => {
+      return total + (serviceDurations[service] || 0)
+    }, 0)
+  }
+
+  const blockTimesForDuration = (startTime, duration) => {
+    const blockedTimes = []
+    const [startHour, startMinute] = startTime.split(':').map(Number)
+    const totalMinutes = startHour * 60 + startMinute + duration
+
+    for (let time of availableTimes) {
+      const [hour, minute] = time.split(':').map(Number)
+      const currentMinutes = hour * 60 + minute
+      if (
+        currentMinutes >= startHour * 60 + startMinute &&
+        currentMinutes < totalMinutes
+      ) {
+        blockedTimes.push(time)
+      }
+    }
+    return blockedTimes
+  }
+
   const handleAddEvent = () => {
     if (selectedTime && selectedServices.length > 0) {
+      const duration = calculateTotalDuration()
+      const blockedTimes = blockTimesForDuration(selectedTime, duration)
+
+      // Atualiza os horários bloqueados para a data selecionada
+      setUnavailableTimesByDate((prev) => {
+        const updatedUnavailableTimes = { ...prev }
+        updatedUnavailableTimes[selectedDate] = [
+          ...(updatedUnavailableTimes[selectedDate] || []),
+          ...blockedTimes,
+        ]
+        return updatedUnavailableTimes
+      })
+
       const eventDetails =
         selectedServices.length === 1
           ? `${selectedServices[0]} às ${selectedTime}`
@@ -98,32 +142,32 @@ function CalendarScreen({
   return (
     <View style={styles.container}>
       <Calendar
-  onDayPress={handleDatePress}
-  theme={{
-    backgroundColor: '#ffffff',
-    calendarBackground: '#ffffff',
-    textSectionTitleColor: '#b6c1cd',
-    selectedDayBackgroundColor: '#00adf5',
-    selectedDayTextColor: '#ffffff',
-    todayTextColor: '#00adf5',
-    dayTextColor: '#2d4150',
-    textDisabledColor: '#d9e1e8',
-    dotColor: '#00adf5',
-    selectedDotColor: '#ffffff',
-    arrowColor: 'orange',
-    monthTextColor: 'blue',
-    indicatorColor: 'blue',
-    textDayFontFamily: 'monospace',
-    textMonthFontFamily: 'monospace',
-    textDayHeaderFontFamily: 'monospace',
-    textDayFontWeight: '300',
-    textMonthFontWeight: 'bold',
-    textDayHeaderFontWeight: '300',
-    textDayFontSize: 16,
-    textMonthFontSize: 16,
-    textDayHeaderFontSize: 16
-  }}
-/>
+        onDayPress={handleDatePress}
+        theme={{
+          backgroundColor: '#ffffff',
+          calendarBackground: '#ffffff',
+          textSectionTitleColor: '#b6c1cd',
+          selectedDayBackgroundColor: '#00adf5',
+          selectedDayTextColor: '#ffffff',
+          todayTextColor: '#00adf5',
+          dayTextColor: '#2d4150',
+          textDisabledColor: '#d9e1e8',
+          dotColor: '#00adf5',
+          selectedDotColor: '#ffffff',
+          arrowColor: 'orange',
+          monthTextColor: 'blue',
+          indicatorColor: 'blue',
+          textDayFontFamily: 'monospace',
+          textMonthFontFamily: 'monospace',
+          textDayHeaderFontFamily: 'monospace',
+          textDayFontWeight: '300',
+          textMonthFontWeight: 'bold',
+          textDayHeaderFontWeight: '300',
+          textDayFontSize: 16,
+          textMonthFontSize: 16,
+          textDayHeaderFontSize: 16,
+        }}
+      />
       {selectedDate ? (
         <View style={styles.eventContainer}>
           <Text style={styles.eventDate}>Eventos em {selectedDate}:</Text>
@@ -144,18 +188,24 @@ function CalendarScreen({
             onValueChange={(itemValue) => setSelectedTime(itemValue)}
             style={styles.picker}>
             <Picker.Item label="Escolha o horário" value="" />
-            {availableTimes.map((time) => (
-              <Picker.Item key={time} label={time} value={time} />
-            ))}
+            {availableTimes
+              .filter(
+                (time) =>
+                  !(
+                    unavailableTimesByDate[selectedDate] &&
+                    unavailableTimesByDate[selectedDate].includes(time)
+                  )
+              )
+              .map((time) => (
+                <Picker.Item key={time} label={time} value={time} />
+              ))}
           </Picker>
 
           <Text style={styles.label}>Selecione o(s) serviço(s):</Text>
           {services.map((service) => (
             <View key={service} style={styles.checkboxContainer}>
               <Checkbox
-                status={
-                  selectedServices.includes(service) ? 'checked' : 'unchecked'
-                }
+                status={selectedServices.includes(service) ? 'checked' : 'unchecked'}
                 onPress={() => toggleServiceSelection(service)}
               />
               <Text style={styles.checkboxLabel}>{service}</Text>
