@@ -15,6 +15,7 @@ import { Picker } from '@react-native-picker/picker'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { registerUser, loginUser } from './database'
 import { Checkbox } from 'react-native-paper'
+import { FlatList } from 'react-native';
 
 const Tab = createBottomTabNavigator()
 
@@ -55,9 +56,9 @@ const availableTimes = [
 ]
 
 const serviceDurations = {
-  'Corte de cabelo': 30,
-  'Luzes no cabelo': 90,
-  'Sobrancelha simples': 15,
+  'Corte de cabelo (30 min)': 30,
+  'Luzes no cabelo (90 min)': 90,
+  'Sobrancelha simples (15 min)': 15,
 }
 
 const services = Object.keys(serviceDurations)
@@ -235,21 +236,31 @@ function CalendarScreen({
 }
 
 function ScheduledEventsScreen({ events, handleLogout }) {
+  // Transforma o objeto de eventos em um array de eventos com data e lista de agendamentos
+  const eventsArray = Object.entries(events).map(([date, eventList]) => ({
+    date,
+    eventList,
+  }))
+
   return (
     <View style={[styles.container, { justifyContent: 'space-between' }]}>
       <ScrollView>
         <Text style={styles.title}>Horários Agendados</Text>
-        {Object.keys(events).length > 0 ? (
-          Object.entries(events).map(([date, eventList]) => (
-            <View key={date} style={styles.eventContainer}>
-              <Text style={styles.eventDate}>Eventos em {date}:</Text>
-              {eventList.map((event, index) => (
-                <Text key={index} style={styles.eventText}>
-                  • {event}
-                </Text>
-              ))}
-            </View>
-          ))
+        {eventsArray.length > 0 ? (
+          <FlatList
+            data={eventsArray}
+            keyExtractor={(item) => item.date}
+            renderItem={({ item }) => (
+              <View style={styles.eventContainer}>
+                <Text style={styles.eventDate}>Eventos em {item.date}:</Text>
+                {item.eventList.map((event, index) => (
+                  <Text key={index} style={styles.eventText}>
+                    • {event}
+                  </Text>
+                ))}
+              </View>
+            )}
+          />
         ) : (
           <Text style={styles.infoText}>Nenhum evento agendado.</Text>
         )}
@@ -434,7 +445,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  eventContainer: { marginTop: 20 },
+    eventContainer: {
+    padding: 10,
+    backgroundColor: '#fff',
+    borderRadius: 5,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
   eventDate: {
     fontSize: 18,
     fontWeight: 'bold',
