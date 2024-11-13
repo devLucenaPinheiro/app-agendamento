@@ -15,7 +15,9 @@ import { Picker } from '@react-native-picker/picker'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { registerUser, loginUser } from './database'
 import { Checkbox } from 'react-native-paper'
-import { FlatList } from 'react-native';
+import { FlatList } from 'react-native'
+import {Linking} from 'react-native'
+import CryptoJS from 'crypto-js'
 
 const Tab = createBottomTabNavigator()
 
@@ -91,6 +93,15 @@ function CalendarScreen({
     return selectedServices.reduce((total, service) => {
       return total + (serviceDurations[service] || 0)
     }, 0)
+  }
+
+const openWhatsApp = () => {
+    const message = 'Olá, acabei de agendar meu horario'
+    const phoneNumber = '+5521994872058'
+    const url = `whatsapp://send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`
+
+    Linking.openURL(url)
+      .catch((err) => console.error('Erro ao abrir o WhatsApp: ', err))
   }
 
   const blockTimesForDuration = (startTime, duration) => {
@@ -223,7 +234,7 @@ function CalendarScreen({
           ))}
 
           <TouchableOpacity style={styles.button} onPress={handleAddEvent}>
-            <Text style={styles.buttonText}>Salvar Evento</Text>
+            <Text style={styles.buttonText}>Agendar</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -241,7 +252,14 @@ function ScheduledEventsScreen({ events, handleLogout }) {
     date,
     eventList,
   }))
+    const openWhatsApp = () => {
+    const message = 'Puta madre.'
+    const phoneNumber = '+552199487-2058'
+    const url = `whatsapp://send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`
 
+    Linking.openURL(url)
+      .catch((err) => console.error('Erro ao abrir o WhatsApp: ', err))
+  }
   return (
     <View style={[styles.container, { justifyContent: 'space-between' }]}>
       <ScrollView>
@@ -268,8 +286,18 @@ function ScheduledEventsScreen({ events, handleLogout }) {
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutButtonText}>Logout</Text>
       </TouchableOpacity>
+       <TouchableOpacity style={styles.whatsappButton} onPress={openWhatsApp}>
+        <Text style={styles.whatsappButtonText}>Fale Conosco no WhatsApp</Text>
+      </TouchableOpacity>
     </View>
   )
+}
+
+const handleEncryptPassword = () => {
+  const salt = CryptoJS.lib.WordArray.random(128 / 8).toString()
+  const hash = CryptoJS.PBKDF2(password, salt, { keySize: 256 / 32, iterations: 1000 }).toString()
+  setStoredHash(hash)
+  Alert.alert('Senha criptografada com PBKDF2', `Hash: ${hash}`)
 }
 
 export default function App() {
@@ -278,6 +306,7 @@ export default function App() {
   const [name, setName] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [userGreeting, setUserGreeting] = useState('')
   const [selectedDate, setSelectedDate] = useState('')
   const [events, setEvents] = useState({})
 
@@ -298,16 +327,24 @@ export default function App() {
     const success = await loginUser(username, password)
     if (success) {
       setIsAuthenticated(true)
+
+      // Carregar nome do usuário do AsyncStorage para exibir no cumprimento
+      const storedName = await AsyncStorage.getItem(`${username}_name`)
+      setUserGreeting(storedName || '') // Se não houver nome, deixa o cumprimento vazio
+
       Alert.alert('Sucesso', 'Login realizado com sucesso!')
     } else {
       Alert.alert('Erro', 'Usuário ou senha incorretos.')
     }
   }
 
-  const handleRegister = async () => {
+    const handleRegister = async () => {
     if (name && username && password) {
       const success = await registerUser(username, password, name)
       if (success) {
+        // Armazenar o nome do usuário para usar mais tarde no cumprimento
+        await AsyncStorage.setItem(`${username}_name`, name)
+
         Alert.alert('Sucesso', 'Usuário cadastrado com sucesso!')
         setIsRegistering(false)
       } else {
@@ -342,6 +379,7 @@ export default function App() {
     setUsername('')
     setPassword('')
     setEvents({})
+    setUserGreeting('')
   }
 
   if (!isAuthenticated) {
@@ -389,7 +427,14 @@ export default function App() {
 
   return (
     <NavigationContainer>
-      <Tab.Navigator>
+      <Tab.Navigator
+        screenOptions={{
+          headerTitle: () => (
+            <Text style={styles.greetingText}>
+              {userGreeting ? `Olá, ${userGreeting}!` : 'Bem-vindo!'}
+            </Text>
+          ),
+        }}>
         <Tab.Screen
           name="Agenda"
           children={() => (
@@ -444,6 +489,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     alignItems: 'center',
   },
+  greetingText: {
+    fontSize: 18,
+    color: '#333',
+    fontWeight: 'bold',
+    marginLeft: 15,
+  },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
     eventContainer: {
     padding: 10,
@@ -468,8 +519,8 @@ const styles = StyleSheet.create({
     marginVertical: 5,
   },
   eventText: { fontSize: 16, color: '#333' },
-  removeButton: { paddingHorizontal: 10 },
-  removeButtonText: { color: 'red', fontSize: 14 },
+  removeButton: { paddingHorizontal: 8 },
+  removeButtonText: { color: 'red', fontSize: 12 },
   infoText: { fontSize: 16, color: '#666', textAlign: 'center', marginTop: 20 },
   checkboxContainer: {
     flexDirection: 'row',
@@ -493,6 +544,20 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   logoutButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+   whatsappButton: {
+    alignSelf: 'center',
+    width: '90%',
+    padding: 15,
+    backgroundColor: '#25D366', 
+    borderRadius: 5,
+    marginTop: 20,
+  },
+  whatsappButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
