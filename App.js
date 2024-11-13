@@ -73,8 +73,17 @@ function CalendarScreen({
   const [selectedServices, setSelectedServices] = useState([])
   const [unavailableTimesByDate, setUnavailableTimesByDate] = useState({})
 
+  const isBlockedDay = (day) => {
+    const date = new Date(day.dateString)
+    const dayOfWeek = date.getUTCDay()
+    return dayOfWeek === 0 || dayOfWeek === 1
+  }
   const handleDatePress = (day) => {
-    setSelectedDate(day.dateString)
+    if (isBlockedDay(day)) {
+      Alert.alert('Indisponível', 'Agendamentos não são permitidos aos domingos e segundas-feiras.')
+    } else {
+      setSelectedDate(day.dateString)
+    }
   }
 
   const calculateTotalDuration = () => {
