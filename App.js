@@ -253,7 +253,7 @@ function ScheduledEventsScreen({ events, handleLogout }) {
     eventList,
   }))
     const openWhatsApp = () => {
-    const message = 'Puta madre.'
+    const message = 'Olá, acabei de agendar meu horario'
     const phoneNumber = '+552199487-2058'
     const url = `whatsapp://send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`
 
@@ -518,9 +518,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 5,
   },
-  eventText: { fontSize: 16, color: '#333' },
-  removeButton: { paddingHorizontal: 8 },
-  removeButtonText: { color: 'red', fontSize: 12 },
+  eventText: { fontSize: 9, color: '#333' },
+  removeButton: { paddingHorizontal: 8},
+  removeButtonText: { color: 'red', fontSize: 12},
   infoText: { fontSize: 16, color: '#666', textAlign: 'center', marginTop: 20 },
   checkboxContainer: {
     flexDirection: 'row',
